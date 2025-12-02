@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { TestScreen, ResultScreen, FullResultScreen, ReportViewer } from '@/components';
+import { AdminPanel } from '@/components/AdminPanel';
+import { KeyInput } from '@/components/KeyInput';
 import { getLiteQuestions, calculateLiteScores } from '@/lib/lite_api';
 import { getFullQuestions, calculateFullScores } from '@/lib/full_api';
 import type { Answer } from '@/lib/types';
@@ -16,12 +18,50 @@ export default function HomePage() {
   const [testVersion, setTestVersion] = useState<TestVersion>('lite');
   const [liteResult, setLiteResult] = useState<LiteResult | null>(null);
   const [fullResult, setFullResult] = useState<FullResult | null>(null);
+  
+  // 관리자 & 암호키 상태
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [compassClicks, setCompassClicks] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
 
   const liteData = getLiteQuestions();
   const fullData = getFullQuestions();
 
+  // 나침반 클릭 핸들러 (5번 연속 클릭 감지)
+  const handleCompassClick = () => {
+    const now = Date.now();
+    
+    // 1초 이내 클릭만 카운트
+    if (now - lastClickTime < 1000) {
+      const newClicks = compassClicks + 1;
+      setCompassClicks(newClicks);
+      
+      if (newClicks >= 5) {
+        setShowAdmin(true);
+        setCompassClicks(0);
+      }
+    } else {
+      setCompassClicks(1);
+    }
+    
+    setLastClickTime(now);
+  };
+
   const handleStartTest = (version: TestVersion) => {
-    setTestVersion(version);
+    if (version === 'full') {
+      // Full 버전은 암호키 필요
+      setShowKeyInput(true);
+    } else {
+      setTestVersion(version);
+      setAppState('testing');
+    }
+  };
+
+  // 암호키 인증 성공
+  const handleKeySuccess = () => {
+    setShowKeyInput(false);
+    setTestVersion('full');
     setAppState('testing');
   };
 
@@ -56,10 +96,35 @@ export default function HomePage() {
   if (appState === 'home') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-indigo-900 flex items-center justify-center p-4">
+        {/* 상단 네비게이션 */}
+        <nav className="fixed top-0 left-0 right-0 z-40 p-4">
+          <div className="max-w-lg mx-auto flex justify-end">
+            <a 
+              href="/about"
+              className="px-4 py-2 bg-white/10 backdrop-blur text-white/80 rounded-lg text-sm hover:bg-white/20 transition-colors"
+            >
+              ✨ 소개
+            </a>
+          </div>
+        </nav>
+        {/* 관리자 패널 */}
+        {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+        
+        {/* 암호키 입력 */}
+        {showKeyInput && (
+          <KeyInput 
+            onSuccess={handleKeySuccess} 
+            onCancel={() => setShowKeyInput(false)} 
+          />
+        )}
+
         <div className="max-w-lg w-full">
           {/* 로고 */}
           <div className="text-center mb-8">
-            <div className="w-24 h-24 bg-white/10 backdrop-blur rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <div 
+              onClick={handleCompassClick}
+              className="w-24 h-24 bg-white/10 backdrop-blur rounded-3xl flex items-center justify-center mx-auto mb-6 cursor-pointer select-none hover:bg-white/15 transition-colors"
+            >
               <span className="text-5xl">🧭</span>
             </div>
             <h1 className="text-4xl font-bold text-white mb-2">
@@ -100,8 +165,13 @@ export default function HomePage() {
             {/* Full 버전 */}
             <button
               onClick={() => handleStartTest('full')}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden"
             >
+              {/* 잠금 아이콘 */}
+              <div className="absolute top-3 right-3">
+                <span className="text-white/60 text-lg">🔒</span>
+              </div>
+              
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -140,7 +210,7 @@ export default function HomePage() {
                 </ul>
               </div>
               <div className="text-purple-200">
-                <div className="font-medium text-white mb-1">Full</div>
+                <div className="font-medium text-white mb-1">Full 🔒</div>
                 <ul className="space-y-1 text-xs">
                   <li>✓ Lite 포함 전부</li>
                   <li>✓ 숨겨진 동기</li>
