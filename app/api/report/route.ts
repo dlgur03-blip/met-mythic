@@ -22,7 +22,7 @@ import type { Archetype } from '@/lib/types';
 // ============================================
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyCkwr4y5m98etszBFH4ASrLTRpOQF0SAjc';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
 
 // ============================================
 // 프롬프트 및 마크다운 로더
