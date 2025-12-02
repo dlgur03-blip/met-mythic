@@ -532,10 +532,6 @@ export default {
   LEVEL_NAMES,
   
   // 계산 함수
-  calculateMotiveScores,
-  calculateIgnitionScores,
-  calculateDirectionScores,
-  calculateOperationScores,
   matchArchetype,
   matchFigure,
   determineLevel,
