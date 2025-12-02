@@ -42,12 +42,6 @@ export function QuestionCard({
 
       {/* 문항 카드 */}
       <div className="bg-white rounded-2xl shadow-lg p-8">
-        {/* 카테고리 뱃지 */}
-        <div className="mb-4">
-          <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-            {getCategoryLabel(question.category)}
-          </span>
-        </div>
 
         {/* 문항 텍스트 */}
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
