@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import type { FullResult } from '@/lib/full_api';
 import type { ReportResponse } from '@/lib/report_generator';
-import { downloadHtmlReport } from '@/lib/htmlReportGenerator';
+import { generateHtmlReport } from '@/lib/htmlReportGenerator';
+import { EmailModal } from './EmailModal';
 
 interface ReportViewerProps {
   result: FullResult;
@@ -17,6 +18,11 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
   const [report, setReport] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [tokensUsed, setTokensUsed] = useState<number>(0);
+  
+  // 이메일 모달 상태
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isEmailSending, setIsEmailSending] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const generateReport = async () => {
     setViewState('loading');
@@ -47,9 +53,8 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
     }
   };
 
-  // 마크다운을 간단히 HTML로 변환 (기본적인 변환)
+  // 마크다운을 HTML로 변환 (개선된 버전)
   const renderMarkdown = (md: string) => {
-    // 기본적인 마크다운 변환
     let html = md
       // 헤더
       .replace(/^### (.+)$/gm, '<h3 class="text-xl font-bold text-white mt-8 mb-4">$1</h3>')
@@ -84,32 +89,43 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
     return `<div class="prose-custom"><p class="my-4 text-purple-100 leading-relaxed">${html}</p></div>`;
   };
 
-  // 복사 기능
-  const copyToClipboard = async () => {
+  // 이메일 전송
+  const handleEmailSubmit = async (email: string) => {
+    setIsEmailSending(true);
+    
     try {
-      await navigator.clipboard.writeText(report);
-      alert('보고서가 클립보드에 복사되었습니다.');
-    } catch {
-      alert('복사에 실패했습니다.');
+      // HTML 보고서 생성
+      const htmlContent = generateHtmlReport(result, report);
+      
+      const response = await fetch('/api/send-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          htmlContent,
+          archetypeName: result.primaryArchetype.archetypeName,
+          figureName: result.primaryFigure.figureName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setEmailSent(true);
+        setIsEmailModalOpen(false);
+        // 3초 후 성공 메시지 숨김
+        setTimeout(() => setEmailSent(false), 5000);
+      } else {
+        throw new Error(data.error || '이메일 전송 실패');
+      }
+    } catch (err) {
+      console.error('Email send error:', err);
+      throw err;
+    } finally {
+      setIsEmailSending(false);
     }
-  };
-
-  // 다운로드 기능 (마크다운)
-  const downloadReport = () => {
-    const blob = new Blob([report], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `MET_Mythic_Report_${result.primaryArchetype.archetypeName}_${new Date().toISOString().split('T')[0]}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // HTML 다운로드 기능
-  const downloadHtml = () => {
-    downloadHtmlReport(result, report);
   };
 
   return (
@@ -127,30 +143,24 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
             </button>
             
             {viewState === 'success' && (
-              <div className="flex gap-2">
-                <button
-                  onClick={copyToClipboard}
-                  className="px-4 py-2 bg-white/10 text-purple-200 rounded-lg hover:bg-white/20 transition-colors text-sm"
-                >
-                  📋 복사
-                </button>
-                <button
-                  onClick={downloadReport}
-                  className="px-4 py-2 bg-white/10 text-purple-200 rounded-lg hover:bg-white/20 transition-colors text-sm"
-                >
-                  📝 MD
-                </button>
-                <button
-                  onClick={downloadHtml}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors text-sm"
-                >
-                  🎨 HTML
-                </button>
-              </div>
+              <button
+                onClick={() => setIsEmailModalOpen(true)}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors text-sm flex items-center gap-2"
+              >
+                <span>📧</span>
+                <span>이메일로 받기</span>
+              </button>
             )}
           </div>
         </div>
       </div>
+
+      {/* 이메일 전송 성공 알림 */}
+      {emailSent && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg animate-bounce">
+          ✅ 이메일이 전송되었습니다! 받은편지함을 확인해주세요.
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* 시작 전 상태 */}
@@ -280,30 +290,36 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
               dangerouslySetInnerHTML={{ __html: renderMarkdown(report) }}
             />
 
-            {/* 하단 버튼 */}
-            <div className="flex flex-wrap justify-center gap-4 pt-4">
+            {/* 하단 이메일 버튼 (큰 버튼) */}
+            <div className="flex justify-center pt-4">
               <button
-                onClick={copyToClipboard}
-                className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors"
+                onClick={() => setIsEmailModalOpen(true)}
+                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium
+                         hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-lg flex items-center gap-3"
               >
-                📋 클립보드에 복사
-              </button>
-              <button
-                onClick={downloadReport}
-                className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors"
-              >
-                📝 마크다운 다운로드
-              </button>
-              <button
-                onClick={downloadHtml}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-colors"
-              >
-                🎨 HTML 보고서 다운로드
+                <span className="text-2xl">📧</span>
+                <div className="text-left">
+                  <div>이메일로 보고서 받기</div>
+                  <div className="text-xs text-purple-200">예쁜 HTML 보고서를 이메일로 보내드려요</div>
+                </div>
               </button>
             </div>
+            
+            {/* 안내 문구 */}
+            <p className="text-center text-sm text-purple-400">
+              💡 카카오톡 등 인앱 브라우저에서는 이메일로 받으시면 편해요!
+            </p>
           </div>
         )}
       </div>
+
+      {/* 이메일 모달 */}
+      <EmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        onSubmit={handleEmailSubmit}
+        isLoading={isEmailSending}
+      />
     </div>
   );
 }

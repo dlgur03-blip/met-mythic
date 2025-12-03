@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { Question, Answer } from '@/lib/types';
 
 export type TestStatus = 'ready' | 'testing' | 'completed' | 'error';
@@ -10,6 +10,7 @@ interface UseTestOptions {
   onComplete?: (answers: Answer[]) => void;
   autoAdvance?: boolean;
   autoAdvanceDelay?: number;
+  shuffle?: boolean; // 질문 섞기 옵션 추가
 }
 
 interface UseTestReturn {
@@ -34,11 +35,22 @@ interface UseTestReturn {
   reset: () => void;
 }
 
+// Fisher-Yates 셔플 알고리즘
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export function useTest({
   questions,
   onComplete,
   autoAdvance = true,
   autoAdvanceDelay = 500,
+  shuffle = true, // 기본값: 섞기 활성화
 }: UseTestOptions): UseTestReturn {
   const [status, setStatus] = useState<TestStatus>('ready');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -49,12 +61,20 @@ export function useTest({
   const questionStartTime = useRef<number>(Date.now());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 현재 문항
-  const currentQuestion = status === 'testing' ? questions[currentIndex] : null;
+  // 질문 섞기 (컴포넌트 마운트 시 한 번만 섞음)
+  const shuffledQuestions = useMemo(() => {
+    if (shuffle) {
+      return shuffleArray(questions);
+    }
+    return questions;
+  }, [questions, shuffle]);
+
+  // 현재 문항 (섞인 질문 사용)
+  const currentQuestion = status === 'testing' ? shuffledQuestions[currentIndex] : null;
   
   // 진행률
-  const progress = questions.length > 0 ? (answers.length / questions.length) * 100 : 0;
-  const remainingQuestions = questions.length - answers.length;
+  const progress = shuffledQuestions.length > 0 ? (answers.length / shuffledQuestions.length) * 100 : 0;
+  const remainingQuestions = shuffledQuestions.length - answers.length;
 
   // 타이머
   useEffect(() => {
@@ -117,7 +137,7 @@ export function useTest({
     // 자동 다음 문항
     if (autoAdvance) {
       setTimeout(() => {
-        if (currentIndex < questions.length - 1) {
+        if (currentIndex < shuffledQuestions.length - 1) {
           setCurrentIndex(prev => prev + 1);
           setSelectedOptionId(null);
           questionStartTime.current = Date.now();
@@ -128,11 +148,11 @@ export function useTest({
         }
       }, autoAdvanceDelay);
     }
-  }, [status, currentQuestion, currentIndex, questions.length, autoAdvance, autoAdvanceDelay, answers, onComplete]);
+  }, [status, currentQuestion, currentIndex, shuffledQuestions.length, autoAdvance, autoAdvanceDelay, answers, onComplete]);
 
   // 다음 문항
   const next = useCallback(() => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < shuffledQuestions.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setSelectedOptionId(null);
       questionStartTime.current = Date.now();
@@ -140,28 +160,28 @@ export function useTest({
       setStatus('completed');
       onComplete?.(answers);
     }
-  }, [currentIndex, questions.length, selectedOptionId, answers, onComplete]);
+  }, [currentIndex, shuffledQuestions.length, selectedOptionId, answers, onComplete]);
 
   // 이전 문항
   const previous = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1);
       // 이전 응답 로드
-      const prevAnswer = answers.find(a => a.questionId === questions[currentIndex - 1]?.id);
+      const prevAnswer = answers.find(a => a.questionId === shuffledQuestions[currentIndex - 1]?.id);
       setSelectedOptionId(prevAnswer?.optionId || null);
       questionStartTime.current = Date.now();
     }
-  }, [currentIndex, answers, questions]);
+  }, [currentIndex, answers, shuffledQuestions]);
 
   // 특정 문항으로 이동
   const goTo = useCallback((index: number) => {
-    if (index >= 0 && index < questions.length) {
+    if (index >= 0 && index < shuffledQuestions.length) {
       setCurrentIndex(index);
-      const answer = answers.find(a => a.questionId === questions[index]?.id);
+      const answer = answers.find(a => a.questionId === shuffledQuestions[index]?.id);
       setSelectedOptionId(answer?.optionId || null);
       questionStartTime.current = Date.now();
     }
-  }, [questions, answers]);
+  }, [shuffledQuestions, answers]);
 
   // 리셋
   const reset = useCallback(() => {
