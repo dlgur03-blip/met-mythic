@@ -4,6 +4,37 @@ import React from 'react';
 import Link from 'next/link';
 
 export default function AboutPage() {
+  const motives = [
+    { key: 'achievement', name: '성취', emoji: '🏆', desc: '목표를 달성하고 결과를 만들어내는 것에서 에너지를 얻습니다.' },
+    { key: 'mastery', name: '통달', emoji: '📚', desc: '깊이 이해하고 전문가가 되는 것을 추구합니다.' },
+    { key: 'creation', name: '창조', emoji: '🎨', desc: '새로운 것을 만들고 표현하는 것에서 의미를 찾습니다.' },
+    { key: 'recognition', name: '인정', emoji: '⭐', desc: '능력과 가치를 인정받고 싶어합니다.' },
+    { key: 'connection', name: '연결', emoji: '💚', desc: '사람들과 깊이 연결되고 싶어합니다.' },
+    { key: 'security', name: '안정', emoji: '🛡️', desc: '예측 가능하고 안전한 환경을 선호합니다.' },
+    { key: 'freedom', name: '자유', emoji: '🕊️', desc: '자율성과 독립성을 중시합니다.' },
+    { key: 'adventure', name: '모험', emoji: '🧭', desc: '새로운 경험과 도전을 추구합니다.' },
+  ];
+
+  const ignitions = [
+    { key: 'competition', name: '경쟁', emoji: '⚔️', desc: '경쟁 상황에서 에너지가 폭발합니다.' },
+    { key: 'complexity', name: '복잡성', emoji: '🧩', desc: '복잡한 문제를 만났을 때 흥분합니다.' },
+    { key: 'deadline', name: '마감', emoji: '⏰', desc: '데드라인이 있을 때 집중력이 극대화됩니다.' },
+    { key: 'audience', name: '관중', emoji: '👥', desc: '누군가 지켜볼 때 더 잘합니다.' },
+    { key: 'autonomy', name: '자율', emoji: '🔓', desc: '스스로 결정할 수 있을 때 몰입합니다.' },
+    { key: 'crisis', name: '위기', emoji: '🚨', desc: '위기 상황에서 오히려 강해집니다.' },
+  ];
+
+  const archetypes = [
+    { key: 'conqueror', name: '정복자', emoji: '⚔️', desc: '목표를 정하고 달성합니다. 승리와 성취가 존재 이유입니다.', figure: '나폴레옹, 알렉산더' },
+    { key: 'sage', name: '현자', emoji: '📚', desc: '깊이 이해하고 통달합니다. 지혜와 지식이 힘입니다.', figure: '제갈량, 아테나' },
+    { key: 'creator', name: '창조자', emoji: '🎨', desc: '새로운 것을 만듭니다. 창작이 존재의 증명입니다.', figure: '다빈치, 헤파이스토스' },
+    { key: 'sovereign', name: '군주', emoji: '👑', desc: '다스리고 보호합니다. 책임과 권위가 함께합니다.', figure: '제우스, 솔로몬' },
+    { key: 'healer', name: '치유자', emoji: '💚', desc: '돌보고 치유합니다. 타인의 아픔이 나의 아픔입니다.', figure: '관음, 아스클레피오스' },
+    { key: 'guardian', name: '수호자', emoji: '🛡️', desc: '지키고 보호합니다. 안전이 최우선입니다.', figure: '헥토르, 아테나' },
+    { key: 'rebel', name: '반역자', emoji: '🔥', desc: '기존 질서에 저항합니다. 변화가 사명입니다.', figure: '프로메테우스, 손오공' },
+    { key: 'explorer', name: '탐험가', emoji: '🧭', desc: '새로운 것을 찾습니다. 여정이 목적입니다.', figure: '오디세우스, 현장' },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* 네비게이션 */}
@@ -14,9 +45,6 @@ export default function AboutPage() {
             MET Mythic
           </Link>
           <div className="flex gap-4">
-            <Link href="/archetypes" className="text-white/70 hover:text-white transition-colors">
-              원형 갤러리
-            </Link>
             <Link href="/" className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm hover:opacity-90">
               테스트 시작
             </Link>
@@ -125,6 +153,111 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* 8가지 동기 원천 상세 */}
+      <section className="py-20 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+            💫 8가지 동기 원천
+          </h2>
+          <p className="text-purple-200 text-center mb-12 text-lg">당신을 움직이는 8가지 근본적인 힘</p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {motives.map((m) => (
+              <div 
+                key={m.key}
+                className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 hover:bg-white/10 transition-colors text-center"
+              >
+                <div className="text-4xl mb-3">{m.emoji}</div>
+                <h3 className="text-lg font-bold text-white mb-2">{m.name}</h3>
+                <p className="text-sm text-white/60">{m.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6가지 점화 조건 상세 */}
+      <section className="py-20 px-4 bg-black/30">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+            🔥 6가지 점화 조건
+          </h2>
+          <p className="text-purple-200 text-center mb-12 text-lg">당신의 에너지에 불을 붙이는 조건</p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {ignitions.map((i) => (
+              <div 
+                key={i.key}
+                className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 hover:bg-white/10 transition-colors text-center"
+              >
+                <div className="text-4xl mb-3">{i.emoji}</div>
+                <h3 className="text-lg font-bold text-white mb-2">{i.name}</h3>
+                <p className="text-sm text-white/60">{i.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 8가지 신화 원형 상세 */}
+      <section className="py-20 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+            🏛️ 8가지 신화 원형
+          </h2>
+          <p className="text-purple-200 text-center mb-12 text-lg">당신의 동기 패턴과 가장 닮은 신화 속 존재</p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {archetypes.map((a) => (
+              <div 
+                key={a.key}
+                className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 hover:bg-white/10 transition-colors text-center"
+              >
+                <div className="text-4xl mb-3">{a.emoji}</div>
+                <h3 className="text-lg font-bold text-white mb-1">{a.name}</h3>
+                <p className="text-xs text-purple-400 mb-2">{a.figure}</p>
+                <p className="text-sm text-white/60">{a.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4단계 성숙도 */}
+      <section className="py-20 px-4 bg-black/30">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+            🌱 4단계 성숙도
+          </h2>
+          <p className="text-purple-200 text-center mb-12 text-lg">같은 원형도 성숙도에 따라 다르게 나타납니다</p>
+          
+          <div className="grid md:grid-cols-4 gap-4">
+            {[
+              { level: 1, name: '그림자', desc: '동기의 어두운 면이 지배합니다' },
+              { level: 2, name: '각성', desc: '동기를 인식하기 시작합니다' },
+              { level: 3, name: '통합', desc: '동기를 조화롭게 다룹니다' },
+              { level: 4, name: '초월', desc: '동기에서 자유로워집니다' },
+            ].map((l) => (
+              <div 
+                key={l.level}
+                className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 text-center"
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3 ${
+                  l.level === 1 ? 'bg-gray-600 text-gray-300' :
+                  l.level === 2 ? 'bg-blue-600 text-white' :
+                  l.level === 3 ? 'bg-purple-600 text-white' :
+                  'bg-gradient-to-r from-yellow-500 to-orange-500 text-white'
+                }`}>
+                  {l.level}
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Lv.{l.level} {l.name}</h3>
+                <p className="text-sm text-white/60">{l.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 분석 요소 섹션 */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto">
@@ -135,14 +268,14 @@ export default function AboutPage() {
 
           <div className="space-y-6">
             {[
-              { icon: '🎯', title: '8가지 동기 원천', desc: '성취, 탐험, 숙련, 인정, 자유, 안정, 연결, 창조 — 당신을 움직이는 근본 에너지', color: 'purple' },
-              { icon: '🔥', title: '6가지 점화 조건', desc: '도전, 의미, 성장, 영향력, 자율성, 조화 — 무엇이 당신의 열정에 불을 붙이는가', color: 'pink' },
-              { icon: '🧭', title: '8가지 신화 원형', desc: '정복자, 현자, 창조자, 군주, 치유자, 수호자, 반역자, 탐험가', color: 'indigo' },
-              { icon: '👤', title: '48명의 신화 인물', desc: '제갈량, 나폴레옹, 관음, 프로메테우스... 당신과 가장 닮은 신화 속 존재', color: 'amber' },
-              { icon: '📈', title: '4단계 성숙도', desc: '잠재기 → 각성기 → 성장기 → 통합기, 당신의 현재 위치와 성장 방향', color: 'green' },
-              { icon: '⚡', title: '에너지 패턴', desc: '무엇이 당신을 충전시키고, 무엇이 소진시키는지', color: 'cyan' },
-              { icon: '🌑', title: '숨겨진 동기', desc: '의식하지 못하지만 당신의 선택에 영향을 미치는 그림자 동기', color: 'slate' },
-              { icon: '💥', title: '동기 충돌', desc: '내면의 갈등이 발생하는 지점과 해결 방향', color: 'red' },
+              { icon: '🎯', title: '8가지 동기 원천', desc: '성취, 통달, 창조, 인정, 연결, 안정, 자유, 모험 — 당신을 움직이는 근본 에너지' },
+              { icon: '🔥', title: '6가지 점화 조건', desc: '경쟁, 복잡성, 마감, 관중, 자율, 위기 — 무엇이 당신의 열정에 불을 붙이는가' },
+              { icon: '🧭', title: '8가지 신화 원형', desc: '정복자, 현자, 창조자, 군주, 치유자, 수호자, 반역자, 탐험가' },
+              { icon: '👤', title: '48명의 신화 인물', desc: '제갈량, 나폴레옹, 관음, 프로메테우스... 당신과 가장 닮은 신화 속 존재' },
+              { icon: '📈', title: '4단계 성숙도', desc: '그림자 → 각성 → 통합 → 초월, 당신의 현재 위치와 성장 방향' },
+              { icon: '⚡', title: '에너지 패턴', desc: '무엇이 당신을 충전시키고, 무엇이 소진시키는지' },
+              { icon: '🌑', title: '숨겨진 동기', desc: '의식하지 못하지만 당신의 선택에 영향을 미치는 그림자 동기' },
+              { icon: '💥', title: '동기 충돌', desc: '내면의 갈등이 발생하는 지점과 해결 방향' },
             ].map((item, i) => (
               <div 
                 key={i}
@@ -279,20 +412,12 @@ export default function AboutPage() {
             당신만의 신화가 기다리고 있습니다
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/"
-              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold text-lg hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/30"
-            >
-              테스트 시작하기
-            </Link>
-            <Link 
-              href="/archetypes"
-              className="px-8 py-4 bg-white/10 text-white rounded-xl font-bold text-lg hover:bg-white/20 transition-colors border border-white/20"
-            >
-              원형 갤러리 보기
-            </Link>
-          </div>
+          <Link 
+            href="/"
+            className="inline-block px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold text-lg hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/30"
+          >
+            테스트 시작하기
+          </Link>
         </div>
       </section>
 

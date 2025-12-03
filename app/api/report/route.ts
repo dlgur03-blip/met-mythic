@@ -71,7 +71,7 @@ async function callGeminiAPI(prompt: string): Promise<{ text: string; tokensUsed
         },
       ],
       generationConfig: {
-        maxOutputTokens: 40000,
+        maxOutputTokens: 60000,
         temperature: 0.7,
       },
     }),
@@ -158,7 +158,7 @@ export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
     status: 'ok',
     model: 'Gemini 2.5 Pro',
-    maxTokens: 40000,
+    maxTokens: 60000,
     message: 'AI 보고서 생성 API가 준비되었습니다.',
   });
 }
