@@ -21,7 +21,7 @@ import type { Archetype } from '@/lib/types';
 // 환경 변수
 // ============================================
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyDFB674WdfdEQMbYZ7K5f_m2EtVZkUSLhc';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
 
 // ============================================
