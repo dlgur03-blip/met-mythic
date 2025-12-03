@@ -217,30 +217,31 @@ const FIGURE_PROFILES: Record<Archetype, Array<{
 // 코사인 유사도 계산
 // ============================================
 
-function cosineSimilarity(
-  vec1: Record<MotiveSource, number>,
-  vec2: Record<MotiveSource, number>
+function weightedSimilarity(
+  userMotives: Record<string, number>,
+  figureMotives: Record<string, number>
 ): number {
-  const motives: MotiveSource[] = [
+  const motives = [
     'achievement', 'mastery', 'creation', 'recognition',
     'connection', 'security', 'freedom', 'adventure'
   ];
   
-  let dotProduct = 0;
-  let norm1 = 0;
-  let norm2 = 0;
-
-  for (const key of motives) {
-    const v1 = (vec1[key] || 0) / 100;
-    const v2 = vec2[key] || 0;
+  let totalDiff = 0;
+  let maxPossibleDiff = 0;
+  
+  for (const motive of motives) {
+    const userVal = userMotives[motive] || 50;
+    const figureVal = (figureMotives[motive] || 0.5) * 100;
     
-    dotProduct += v1 * v2;
-    norm1 += v1 * v1;
-    norm2 += v2 * v2;
+    const diff = Math.abs(userVal - figureVal);
+    totalDiff += diff;
+    maxPossibleDiff += 100;
   }
-
-  if (norm1 === 0 || norm2 === 0) return 0;
-  return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+  
+  const rawSimilarity = 1 - (totalDiff / maxPossibleDiff);
+  const scaledSimilarity = 30 + (rawSimilarity * 70);
+  
+  return Math.round(scaledSimilarity * 10) / 10;
 }
 
 // ============================================
@@ -316,7 +317,7 @@ function matchFigureFull(
   const results: FigureMatch[] = [];
 
   for (const figure of figures) {
-    const similarity = cosineSimilarity(motivation, figure.motivation);
+    const similarity = weightedSimilarity(motivation, figure.motivation);
 
     results.push({
       figure: figure.key,
@@ -341,6 +342,8 @@ function matchFigureFull(
 export interface FullResult {
   version: 'full';
   questionCount: number;
+  nickname?: string;  // 🆕 이 줄 추가!
+
   
   // 핵심 점수 (Lite와 동일)
   motiveScores: MotiveScore[];

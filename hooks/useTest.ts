@@ -5,29 +5,41 @@ import type { Question, Answer } from '@/lib/types';
 
 export type TestStatus = 'ready' | 'testing' | 'completed' | 'error';
 
+// localStorage 키
+const STORAGE_KEY = 'met-mythic-progress';
+
+interface SavedProgress {
+  answers: Answer[];
+  currentIndex: number;
+  elapsedTime: number;
+  questionOrder: string[];
+  version: 'lite' | 'full';
+  savedAt: string;
+}
+
 interface UseTestOptions {
   questions: Question[];
   onComplete?: (answers: Answer[]) => void;
   autoAdvance?: boolean;
   autoAdvanceDelay?: number;
-  shuffle?: boolean; // 질문 섞기 옵션 추가
+  shuffle?: boolean;
+  version?: 'lite' | 'full';
 }
 
 interface UseTestReturn {
-  // 상태
   status: TestStatus;
   currentIndex: number;
   currentQuestion: Question | null;
   answers: Answer[];
   selectedOptionId: string | null;
-  
-  // 진행률
   progress: number;
   remainingQuestions: number;
   elapsedTime: number;
-  
-  // 액션
+  hasSavedProgress: boolean;
+  savedProgressInfo: { answeredCount: number; totalCount: number; savedAt: string } | null;
   start: () => void;
+  resume: () => void;
+  clearSavedProgress: () => void;
   selectOption: (optionId: string) => void;
   next: () => void;
   previous: () => void;
@@ -35,7 +47,7 @@ interface UseTestReturn {
   reset: () => void;
 }
 
-// Fisher-Yates 셔플 알고리즘
+// Fisher-Yates 셔플
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -49,32 +61,92 @@ export function useTest({
   questions,
   onComplete,
   autoAdvance = true,
-  autoAdvanceDelay = 500,
-  shuffle = true, // 기본값: 섞기 활성화
+  autoAdvanceDelay = 300,
+  shuffle = true,
+  version = 'full',
 }: UseTestOptions): UseTestReturn {
   const [status, setStatus] = useState<TestStatus>('ready');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [questionOrder, setQuestionOrder] = useState<string[]>([]);
+  const [hasSavedProgress, setHasSavedProgress] = useState(false);
+  const [savedProgressInfo, setSavedProgressInfo] = useState<{ answeredCount: number; totalCount: number; savedAt: string } | null>(null);
   
   const questionStartTime = useRef<number>(Date.now());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 질문 섞기 (컴포넌트 마운트 시 한 번만 섞음)
+  // 저장된 진행 상황 확인
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data: SavedProgress = JSON.parse(saved);
+        if (data.version === version && data.answers.length > 0) {
+          setHasSavedProgress(true);
+          setSavedProgressInfo({
+            answeredCount: data.answers.length,
+            totalCount: questions.length,
+            savedAt: data.savedAt,
+          });
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load saved progress:', e);
+    }
+  }, [version, questions.length]);
+
+  // 질문 순서
   const shuffledQuestions = useMemo(() => {
+    if (questionOrder.length > 0) {
+      return questionOrder
+        .map(id => questions.find(q => q.id === id))
+        .filter((q): q is Question => q !== undefined);
+    }
     if (shuffle) {
       return shuffleArray(questions);
     }
     return questions;
-  }, [questions, shuffle]);
+  }, [questions, shuffle, questionOrder]);
 
-  // 현재 문항 (섞인 질문 사용)
   const currentQuestion = status === 'testing' ? shuffledQuestions[currentIndex] : null;
-  
-  // 진행률
   const progress = shuffledQuestions.length > 0 ? (answers.length / shuffledQuestions.length) * 100 : 0;
   const remainingQuestions = shuffledQuestions.length - answers.length;
+
+  // 진행 상황 저장
+  const saveProgress = useCallback((
+    newAnswers: Answer[],
+    newIndex: number,
+    newElapsedTime: number,
+    order: string[]
+  ) => {
+    try {
+      const data: SavedProgress = {
+        answers: newAnswers,
+        currentIndex: newIndex,
+        elapsedTime: newElapsedTime,
+        questionOrder: order,
+        version,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.error('Failed to save progress:', e);
+    }
+  }, [version]);
+
+  const clearSavedProgress = useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      setHasSavedProgress(false);
+      setSavedProgressInfo(null);
+    } catch (e) {
+      console.error('Failed to clear saved progress:', e);
+    }
+  }, []);
 
   // 타이머
   useEffect(() => {
@@ -94,17 +166,55 @@ export function useTest({
     };
   }, [status]);
 
-  // 시작
+  // 새로 시작
   const start = useCallback(() => {
+    clearSavedProgress();
+    
+    const newOrder = shuffle 
+      ? shuffleArray(questions).map(q => q.id)
+      : questions.map(q => q.id);
+    
+    setQuestionOrder(newOrder);
     setStatus('testing');
     setCurrentIndex(0);
     setAnswers([]);
     setSelectedOptionId(null);
     setElapsedTime(0);
     questionStartTime.current = Date.now();
-  }, []);
+    
+    saveProgress([], 0, 0, newOrder);
+  }, [shuffle, questions, clearSavedProgress, saveProgress]);
 
-  // 옵션 선택
+  // 이어하기
+  const resume = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        start();
+        return;
+      }
+      
+      const data: SavedProgress = JSON.parse(saved);
+      
+      setQuestionOrder(data.questionOrder);
+      setAnswers(data.answers);
+      setCurrentIndex(data.currentIndex);
+      setElapsedTime(data.elapsedTime);
+      setStatus('testing');
+      setHasSavedProgress(false);
+      
+      const currentQId = data.questionOrder[data.currentIndex];
+      const prevAnswer = data.answers.find(a => a.questionId === currentQId);
+      setSelectedOptionId(prevAnswer?.optionId || null);
+      
+      questionStartTime.current = Date.now();
+    } catch (e) {
+      console.error('Failed to resume:', e);
+      start();
+    }
+  }, [start]);
+
+  // 옵션 선택 (자동 다음으로 넘어감)
   const selectOption = useCallback((optionId: string) => {
     if (status !== 'testing' || !currentQuestion) return;
     
@@ -123,73 +233,96 @@ export function useTest({
       timestamp: new Date(),
     };
     
-    // 기존 응답 업데이트 또는 추가
-    setAnswers(prev => {
-      const existingIndex = prev.findIndex(a => a.questionId === currentQuestion.id);
+    const newAnswers = (() => {
+      const existingIndex = answers.findIndex(a => a.questionId === currentQuestion.id);
       if (existingIndex >= 0) {
-        const updated = [...prev];
+        const updated = [...answers];
         updated[existingIndex] = answer;
         return updated;
       }
-      return [...prev, answer];
-    });
+      return [...answers, answer];
+    })();
+    
+    setAnswers(newAnswers);
+    
+    const order = questionOrder.length > 0 
+      ? questionOrder 
+      : shuffledQuestions.map(q => q.id);
+    saveProgress(newAnswers, currentIndex, elapsedTime, order);
 
     // 자동 다음 문항
     if (autoAdvance) {
       setTimeout(() => {
         if (currentIndex < shuffledQuestions.length - 1) {
-          setCurrentIndex(prev => prev + 1);
+          const nextIndex = currentIndex + 1;
+          setCurrentIndex(nextIndex);
           setSelectedOptionId(null);
           questionStartTime.current = Date.now();
+          saveProgress(newAnswers, nextIndex, elapsedTime, order);
         } else {
-          // 마지막 문항 완료
           setStatus('completed');
-          onComplete?.(answers.concat(answer));
+          clearSavedProgress();
+          onComplete?.(newAnswers);
         }
       }, autoAdvanceDelay);
     }
-  }, [status, currentQuestion, currentIndex, shuffledQuestions.length, autoAdvance, autoAdvanceDelay, answers, onComplete]);
+  }, [status, currentQuestion, currentIndex, shuffledQuestions, autoAdvance, autoAdvanceDelay, answers, onComplete, questionOrder, elapsedTime, saveProgress, clearSavedProgress]);
 
-  // 다음 문항
   const next = useCallback(() => {
     if (currentIndex < shuffledQuestions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
       setSelectedOptionId(null);
       questionStartTime.current = Date.now();
+      
+      const order = questionOrder.length > 0 
+        ? questionOrder 
+        : shuffledQuestions.map(q => q.id);
+      saveProgress(answers, nextIndex, elapsedTime, order);
     } else if (selectedOptionId) {
       setStatus('completed');
+      clearSavedProgress();
       onComplete?.(answers);
     }
-  }, [currentIndex, shuffledQuestions.length, selectedOptionId, answers, onComplete]);
+  }, [currentIndex, shuffledQuestions, selectedOptionId, answers, onComplete, questionOrder, elapsedTime, saveProgress, clearSavedProgress]);
 
-  // 이전 문항
   const previous = useCallback(() => {
     if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-      // 이전 응답 로드
-      const prevAnswer = answers.find(a => a.questionId === shuffledQuestions[currentIndex - 1]?.id);
+      const prevIndex = currentIndex - 1;
+      setCurrentIndex(prevIndex);
+      
+      const prevAnswer = answers.find(a => a.questionId === shuffledQuestions[prevIndex]?.id);
       setSelectedOptionId(prevAnswer?.optionId || null);
       questionStartTime.current = Date.now();
+      
+      const order = questionOrder.length > 0 
+        ? questionOrder 
+        : shuffledQuestions.map(q => q.id);
+      saveProgress(answers, prevIndex, elapsedTime, order);
     }
-  }, [currentIndex, answers, shuffledQuestions]);
+  }, [currentIndex, answers, shuffledQuestions, questionOrder, elapsedTime, saveProgress]);
 
-  // 특정 문항으로 이동
   const goTo = useCallback((index: number) => {
     if (index >= 0 && index < shuffledQuestions.length) {
       setCurrentIndex(index);
       const answer = answers.find(a => a.questionId === shuffledQuestions[index]?.id);
       setSelectedOptionId(answer?.optionId || null);
       questionStartTime.current = Date.now();
+      
+      const order = questionOrder.length > 0 
+        ? questionOrder 
+        : shuffledQuestions.map(q => q.id);
+      saveProgress(answers, index, elapsedTime, order);
     }
-  }, [shuffledQuestions, answers]);
+  }, [shuffledQuestions, answers, questionOrder, elapsedTime, saveProgress]);
 
-  // 리셋
   const reset = useCallback(() => {
     setStatus('ready');
     setCurrentIndex(0);
     setAnswers([]);
     setSelectedOptionId(null);
     setElapsedTime(0);
+    setQuestionOrder([]);
   }, []);
 
   return {
@@ -201,7 +334,11 @@ export function useTest({
     progress,
     remainingQuestions,
     elapsedTime,
+    hasSavedProgress,
+    savedProgressInfo,
     start,
+    resume,
+    clearSavedProgress,
     selectOption,
     next,
     previous,

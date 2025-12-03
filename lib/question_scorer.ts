@@ -624,16 +624,16 @@ export function calculateMaturityScores(answers: Answer[]): MaturityScore {
     }
   }
   
-  const awareness = Math.round(getAverage(awarenessAcc, 2.5) * 20);
-  const integration = Math.round(getAverage(integrationAcc, 2.5) * 20);
-  const growth = Math.round(getAverage(growthAcc, 2.5) * 20);
+  const awareness = Math.round(getAverage(awarenessAcc, 1.5) * 16);
+  const integration = Math.round(getAverage(integrationAcc, 1.5) * 16);
+  const growth = Math.round(getAverage(growthAcc, 1.5) * 16);
   const overall = Math.round((awareness + integration + growth) / 3);
   
   // 레벨 판정
   let level: 1 | 2 | 3 | 4;
-  if (overall >= 80) level = 4;
-  else if (overall >= 60) level = 3;
-  else if (overall >= 40) level = 2;
+  if (overall >= 75) level = 4;
+  else if (overall >= 55) level = 3;
+  else if (overall >= 35) level = 2;
   else level = 1;
   
   return { awareness, integration, growth, overall, level };

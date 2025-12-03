@@ -18,14 +18,30 @@ export function TestScreen({ questions, version, onComplete }: TestScreenProps) 
     currentQuestion,
     selectedOptionId,
     elapsedTime,
+    hasSavedProgress,
+    savedProgressInfo,
     start,
+    resume,
+    clearSavedProgress,
     selectOption,
-    next,
   } = useTest({
     questions,
     onComplete,
-    autoAdvance: false,  // 자동 넘김 끔
+    autoAdvance: true,  // 선택하면 자동으로 다음으로!
+    autoAdvanceDelay: 300, // 0.3초 후 다음으로
+    shuffle: true,
+    version,
   });
+
+  // 시간 포맷 (저장 시간용)
+  const formatSavedTime = (isoString: string) => {
+    const date = new Date(isoString);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    return `${month}/${day} ${hours}:${minutes.toString().padStart(2, '0')}`;
+  };
 
   // 시작 화면
   if (status === 'ready') {
@@ -55,6 +71,44 @@ export function TestScreen({ questions, version, onComplete }: TestScreenProps) 
               </span>
             </div>
           </div>
+
+          {/* 이어하기 UI */}
+          {hasSavedProgress && savedProgressInfo && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">💾</span>
+                <span className="font-medium text-indigo-900">저장된 진행 상황</span>
+              </div>
+              <div className="text-sm text-indigo-700 mb-3">
+                <p>{savedProgressInfo.answeredCount} / {savedProgressInfo.totalCount} 문항 완료</p>
+                <p className="text-xs text-indigo-500 mt-1">
+                  저장: {formatSavedTime(savedProgressInfo.savedAt)}
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={resume}
+                  className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-medium
+                           hover:bg-indigo-700 transition-colors duration-200"
+                >
+                  🔄 이어하기
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm('저장된 진행 상황이 삭제됩니다. 처음부터 시작할까요?')) {
+                      clearSavedProgress();
+                      start();
+                    }
+                  }}
+                  className="py-3 px-4 bg-gray-200 text-gray-700 rounded-xl font-medium
+                           hover:bg-gray-300 transition-colors duration-200"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          )}
           
           <button
             onClick={start}
@@ -62,11 +116,13 @@ export function TestScreen({ questions, version, onComplete }: TestScreenProps) 
                      hover:bg-indigo-700 transition-colors duration-200 shadow-lg
                      hover:shadow-xl active:scale-[0.98]"
           >
-            검사 시작하기
+            {hasSavedProgress ? '처음부터 시작하기' : '검사 시작하기'}
           </button>
           
           <p className="text-xs text-gray-400 mt-4">
-            솔직하게 응답해 주세요. 정답은 없습니다.
+            {hasSavedProgress 
+              ? '💡 중간에 종료해도 자동 저장됩니다'
+              : '솔직하게 응답해 주세요. 정답은 없습니다.'}
           </p>
         </div>
       </div>
@@ -97,17 +153,29 @@ export function TestScreen({ questions, version, onComplete }: TestScreenProps) 
     );
   }
 
-  // 테스트 진행 화면
+  // 테스트 진행 화면 (다음 버튼 없이!)
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 py-8 px-4">
-      {/* 상단 정보 - 시간만 표시 */}
+      {/* 상단 정보 */}
       <div className="max-w-2xl mx-auto mb-6">
-        <div className="flex justify-center text-sm text-gray-500">
+        <div className="flex justify-between items-center text-sm text-gray-500">
+          <span>💾 자동 저장</span>
           <span>⏱️ {formatTime(elapsedTime)}</span>
+        </div>
+        
+        {/* 진행률 바 */}
+        <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-indigo-600 transition-all duration-300"
+            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+          />
+        </div>
+        <div className="mt-1 text-xs text-gray-400 text-right">
+          {currentIndex + 1} / {questions.length}
         </div>
       </div>
 
-      {/* 문항 카드 */}
+      {/* 문항 카드 - 클릭하면 바로 다음으로! */}
       {currentQuestion && (
         <QuestionCard
           question={currentQuestion}
@@ -118,19 +186,11 @@ export function TestScreen({ questions, version, onComplete }: TestScreenProps) 
         />
       )}
 
-      {/* 다음 버튼 */}
-      <div className="max-w-2xl mx-auto mt-6">
-        <button
-          onClick={next}
-          disabled={!selectedOptionId}
-          className={`w-full py-4 rounded-xl font-medium transition-all duration-200
-            ${selectedOptionId 
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-xl active:scale-[0.98]' 
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-        >
-          {currentIndex < questions.length - 1 ? '다음' : '결과 보기'}
-        </button>
+      {/* 안내 문구 (다음 버튼 대신) */}
+      <div className="max-w-2xl mx-auto mt-6 text-center">
+        <p className="text-sm text-gray-400">
+          💡 답변을 선택하면 자동으로 다음 문항으로 넘어갑니다
+        </p>
       </div>
     </div>
   );

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TestScreen, ResultScreen, FullResultScreen, ReportViewer } from '@/components';
 import { AdminPanel } from '@/components/AdminPanel';
 import { KeyInput } from '@/components/KeyInput';
+import { NicknameInput } from '@/components/NicknameInput';
 import { getLiteQuestions, calculateLiteScores } from '@/lib/lite_api';
 import { getFullQuestions, calculateFullScores } from '@/lib/full_api';
 import type { Answer } from '@/lib/types';
@@ -13,26 +14,52 @@ import type { FullResult } from '@/lib/full_api';
 type AppState = 'home' | 'testing' | 'result' | 'report';
 type TestVersion = 'lite' | 'full';
 
+// localStorage 키
+const KEY_STORAGE = 'met-mythic-access';
+const NICKNAME_STORAGE = 'met-mythic-nickname';
+
 export default function HomePage() {
   const [appState, setAppState] = useState<AppState>('home');
   const [testVersion, setTestVersion] = useState<TestVersion>('lite');
   const [liteResult, setLiteResult] = useState<LiteResult | null>(null);
   const [fullResult, setFullResult] = useState<FullResult | null>(null);
   
-  // 관리자 & 암호키 상태
+  // 관리자 & 암호키 & 닉네임 상태
   const [showAdmin, setShowAdmin] = useState(false);
   const [showKeyInput, setShowKeyInput] = useState(false);
+  const [showNicknameInput, setShowNicknameInput] = useState(false);
   const [compassClicks, setCompassClicks] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
+  const [isKeyVerified, setIsKeyVerified] = useState(false);
+  const [nickname, setNickname] = useState<string>('');
+  const [pendingVersion, setPendingVersion] = useState<TestVersion>('lite');
 
   const liteData = getLiteQuestions();
   const fullData = getFullQuestions();
+
+  // 페이지 로드 시 저장된 데이터 확인
+  useEffect(() => {
+    try {
+      // 암호키 확인
+      const savedKey = localStorage.getItem(KEY_STORAGE);
+      if (savedKey) {
+        setIsKeyVerified(true);
+      }
+      
+      // 닉네임 확인
+      const savedNickname = localStorage.getItem(NICKNAME_STORAGE);
+      if (savedNickname) {
+        setNickname(savedNickname);
+      }
+    } catch (e) {
+      console.error('Failed to load saved data:', e);
+    }
+  }, []);
 
   // 나침반 클릭 핸들러 (5번 연속 클릭 감지)
   const handleCompassClick = () => {
     const now = Date.now();
     
-    // 1초 이내 클릭만 카운트
     if (now - lastClickTime < 1000) {
       const newClicks = compassClicks + 1;
       setCompassClicks(newClicks);
@@ -49,28 +76,68 @@ export default function HomePage() {
   };
 
   const handleStartTest = (version: TestVersion) => {
-    if (version === 'full') {
-      // Full 버전은 암호키 필요
+    setPendingVersion(version);
+    
+    if (version === 'full' && !isKeyVerified) {
+      // Full 버전인데 암호키 미인증 → 암호키 먼저
       setShowKeyInput(true);
     } else {
-      setTestVersion(version);
-      setAppState('testing');
+      // 닉네임 입력으로 이동
+      setShowNicknameInput(true);
     }
   };
 
   // 암호키 인증 성공
   const handleKeySuccess = () => {
+    try {
+      localStorage.setItem(KEY_STORAGE, JSON.stringify({
+        verified: true,
+        timestamp: new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.error('Failed to save key verification:', e);
+    }
+    
+    setIsKeyVerified(true);
     setShowKeyInput(false);
-    setTestVersion('full');
+    // 암호키 인증 후 닉네임 입력으로
+    setShowNicknameInput(true);
+  };
+
+  // 닉네임 입력 완료
+  const handleNicknameSubmit = (inputNickname: string) => {
+    setNickname(inputNickname);
+    
+    // localStorage에 저장
+    try {
+      localStorage.setItem(NICKNAME_STORAGE, inputNickname);
+    } catch (e) {
+      console.error('Failed to save nickname:', e);
+    }
+    
+    setShowNicknameInput(false);
+    setTestVersion(pendingVersion);
+    setAppState('testing');
+  };
+
+  // 닉네임 건너뛰기
+  const handleNicknameSkip = () => {
+    setNickname('');
+    setShowNicknameInput(false);
+    setTestVersion(pendingVersion);
     setAppState('testing');
   };
 
   const handleComplete = (answers: Answer[]) => {
     if (testVersion === 'lite') {
       const result = calculateLiteScores(answers);
+      // nickname 추가
+      (result as any).nickname = nickname || undefined;
       setLiteResult(result);
     } else {
       const result = calculateFullScores(answers);
+      // nickname 추가
+      result.nickname = nickname || undefined;
       setFullResult(result);
     }
     setAppState('result');
@@ -107,6 +174,7 @@ export default function HomePage() {
             </a>
           </div>
         </nav>
+        
         {/* 관리자 패널 */}
         {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
         
@@ -115,6 +183,15 @@ export default function HomePage() {
           <KeyInput 
             onSuccess={handleKeySuccess} 
             onCancel={() => setShowKeyInput(false)} 
+          />
+        )}
+
+        {/* 닉네임 입력 */}
+        {showNicknameInput && (
+          <NicknameInput
+            version={pendingVersion}
+            onSubmit={handleNicknameSubmit}
+            onSkip={handleNicknameSkip}
           />
         )}
 
@@ -133,6 +210,22 @@ export default function HomePage() {
             <p className="text-indigo-200">
               당신의 동기 원형을 찾아드립니다
             </p>
+            
+            {/* 닉네임 표시 */}
+            {nickname && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full">
+                <span className="text-sm text-indigo-200">👤 {nickname}</span>
+                <button
+                  onClick={() => {
+                    setNickname('');
+                    localStorage.removeItem(NICKNAME_STORAGE);
+                  }}
+                  className="text-indigo-400 hover:text-white text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 버전 선택 카드 */}
@@ -167,9 +260,11 @@ export default function HomePage() {
               onClick={() => handleStartTest('full')}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden"
             >
-              {/* 잠금 아이콘 */}
+              {/* 잠금/해제 아이콘 */}
               <div className="absolute top-3 right-3">
-                <span className="text-white/60 text-lg">🔒</span>
+                <span className="text-white/60 text-lg">
+                  {isKeyVerified ? '🔓' : '🔒'}
+                </span>
               </div>
               
               <div className="flex items-start justify-between">
@@ -177,9 +272,16 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-2xl">🔮</span>
                     <h3 className="text-xl font-bold text-white">Full 버전</h3>
-                    <span className="px-2 py-0.5 bg-white/20 text-white text-xs rounded-full">
-                      상세 분석
-                    </span>
+                    {isKeyVerified && (
+                      <span className="px-2 py-0.5 bg-green-500/30 text-green-200 text-xs rounded-full">
+                        인증됨 ✓
+                      </span>
+                    )}
+                    {!isKeyVerified && (
+                      <span className="px-2 py-0.5 bg-white/20 text-white text-xs rounded-full">
+                        상세 분석
+                      </span>
+                    )}
                   </div>
                   <p className="text-purple-100 text-sm mb-3">
                     깊이 있는 분석과 숨겨진 동기까지 탐색
@@ -210,7 +312,9 @@ export default function HomePage() {
                 </ul>
               </div>
               <div className="text-purple-200">
-                <div className="font-medium text-white mb-1">Full 🔒</div>
+                <div className="font-medium text-white mb-1">
+                  Full {isKeyVerified ? '🔓' : '🔒'}
+                </div>
                 <ul className="space-y-1 text-xs">
                   <li>✓ Lite 포함 전부</li>
                   <li>✓ 숨겨진 동기</li>
