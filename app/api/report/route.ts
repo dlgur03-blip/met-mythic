@@ -21,7 +21,7 @@ import type { Archetype } from '@/lib/types';
 // 환경 변수
 // ============================================
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyDFB674WdfdEQMbYZ7K5f_m2EtVZkUSLhc';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
 
 // ============================================
@@ -159,8 +159,6 @@ export async function GET(): Promise<NextResponse> {
     status: 'ok',
     model: 'Gemini 2.5 Pro',
     maxTokens: 60000,
-    hasKey: !!process.env.GEMINI_API_KEY,
-    keyLength: process.env.GEMINI_API_KEY?.length || 0,
     message: 'AI 보고서 생성 API가 준비되었습니다.',
   });
 }
