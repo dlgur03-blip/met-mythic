@@ -324,7 +324,7 @@ function matchFigureFull(
       figureName: figure.name,
       figureNameEn: figure.nameEn,
       origin: figure.origin,
-      similarity: Math.round(similarity * 100 * 10) / 10,
+      similarity: Math.round(similarity * 10) / 10,
       rank: 0,
     });
   }
