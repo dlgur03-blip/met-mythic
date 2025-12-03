@@ -33,6 +33,10 @@ export default function HomePage() {
   const [isKeyVerified, setIsKeyVerified] = useState(false);
   const [nickname, setNickname] = useState<string>('');
   const [pendingVersion, setPendingVersion] = useState<TestVersion>('lite');
+  
+  // 🆕 테스트 모드 상태
+  const [isTestMode, setIsTestMode] = useState(false);
+  const [testDescription, setTestDescription] = useState<string>('');
 
   const liteData = getLiteQuestions();
   const fullData = getFullQuestions();
@@ -117,6 +121,7 @@ export default function HomePage() {
     
     setShowNicknameInput(false);
     setTestVersion(pendingVersion);
+    setIsTestMode(false);  // 일반 모드
     setAppState('testing');
   };
 
@@ -125,7 +130,18 @@ export default function HomePage() {
     setNickname('');
     setShowNicknameInput(false);
     setTestVersion(pendingVersion);
+    setIsTestMode(false);  // 일반 모드
     setAppState('testing');
+  };
+
+  // 🆕 테스트 모드 완료 핸들러
+  const handleTestComplete = (result: FullResult, description: string) => {
+    setFullResult(result);
+    setTestVersion('full');
+    setIsTestMode(true);
+    setTestDescription(description);
+    setShowNicknameInput(false);
+    setAppState('result');
   };
 
   const handleComplete = (answers: Answer[]) => {
@@ -140,12 +156,15 @@ export default function HomePage() {
       result.nickname = nickname || undefined;
       setFullResult(result);
     }
+    setIsTestMode(false);  // 실제 테스트는 테스트 모드 아님
     setAppState('result');
   };
 
   const handleRetry = () => {
     setLiteResult(null);
     setFullResult(null);
+    setIsTestMode(false);
+    setTestDescription('');
     setAppState('home');
   };
 
@@ -186,12 +205,13 @@ export default function HomePage() {
           />
         )}
 
-        {/* 닉네임 입력 */}
+        {/* 닉네임 입력 - 🆕 onTestComplete 추가 */}
         {showNicknameInput && (
           <NicknameInput
             version={pendingVersion}
             onSubmit={handleNicknameSubmit}
             onSkip={handleNicknameSkip}
+            onTestComplete={handleTestComplete}
           />
         )}
 
@@ -352,34 +372,69 @@ export default function HomePage() {
 
   // 결과 화면
   if (appState === 'result') {
+    // 🆕 테스트 모드 배너
+    const TestModeBanner = isTestMode ? (
+      <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-black py-2 px-4 text-center font-medium">
+        {testDescription}
+        <button 
+          onClick={handleRetry}
+          className="ml-4 px-3 py-1 bg-black/20 rounded text-sm hover:bg-black/30"
+        >
+          홈으로
+        </button>
+      </div>
+    ) : null;
+
     if (testVersion === 'lite' && liteResult) {
       return (
-        <ResultScreen
-          result={liteResult}
-          onRetry={handleRetry}
-          onViewFull={() => handleStartTest('full')}
-        />
+        <>
+          {TestModeBanner}
+          <div className={isTestMode ? 'pt-12' : ''}>
+            <ResultScreen
+              result={liteResult}
+              onRetry={handleRetry}
+              onViewFull={() => handleStartTest('full')}
+            />
+          </div>
+        </>
       );
     }
     
     if (testVersion === 'full' && fullResult) {
       return (
-        <FullResultScreen
-          result={fullResult}
-          onRetry={handleRetry}
-          onGenerateReport={handleGenerateReport}
-        />
+        <>
+          {TestModeBanner}
+          <div className={isTestMode ? 'pt-12' : ''}>
+            <FullResultScreen
+              result={fullResult}
+              onRetry={handleRetry}
+              onGenerateReport={handleGenerateReport}
+            />
+          </div>
+        </>
       );
     }
   }
 
   // AI 보고서 화면
   if (appState === 'report' && fullResult) {
+    // 🆕 테스트 모드 배너
+    const TestModeBanner = isTestMode ? (
+      <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-black py-2 px-4 text-center font-medium">
+        {testDescription}
+      </div>
+    ) : null;
+
     return (
-      <ReportViewer
-        result={fullResult}
-        onBack={handleBackFromReport}
-      />
+      <>
+        {TestModeBanner}
+        <div className={isTestMode ? 'pt-12' : ''}>
+          <ReportViewer
+            result={fullResult}
+            onBack={handleBackFromReport}
+          />
+        </div>
+      </>
     );
   }
 
