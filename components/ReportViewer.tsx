@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { FullResult } from '@/lib/full_api';
 import type { ReportResponse } from '@/lib/report_generator';
+import { downloadHtmlReport } from '@/lib/htmlReportGenerator';
 
 interface ReportViewerProps {
   result: FullResult;
@@ -93,7 +94,7 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
     }
   };
 
-  // 다운로드 기능
+  // 다운로드 기능 (마크다운)
   const downloadReport = () => {
     const blob = new Blob([report], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
@@ -104,6 +105,11 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  // HTML 다운로드 기능
+  const downloadHtml = () => {
+    downloadHtmlReport(result, report);
   };
 
   return (
@@ -132,7 +138,13 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
                   onClick={downloadReport}
                   className="px-4 py-2 bg-white/10 text-purple-200 rounded-lg hover:bg-white/20 transition-colors text-sm"
                 >
-                  💾 다운로드
+                  📝 MD
+                </button>
+                <button
+                  onClick={downloadHtml}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors text-sm"
+                >
+                  🎨 HTML
                 </button>
               </div>
             )}
@@ -269,7 +281,7 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
             />
 
             {/* 하단 버튼 */}
-            <div className="flex justify-center gap-4 pt-4">
+            <div className="flex flex-wrap justify-center gap-4 pt-4">
               <button
                 onClick={copyToClipboard}
                 className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors"
@@ -278,9 +290,15 @@ export function ReportViewer({ result, onBack }: ReportViewerProps) {
               </button>
               <button
                 onClick={downloadReport}
+                className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors"
+              >
+                📝 마크다운 다운로드
+              </button>
+              <button
+                onClick={downloadHtml}
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-colors"
               >
-                💾 마크다운 다운로드
+                🎨 HTML 보고서 다운로드
               </button>
             </div>
           </div>
