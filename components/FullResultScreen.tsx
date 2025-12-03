@@ -51,6 +51,15 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
     { key: 'growth', label: '성장', emoji: '🌱' },
   ];
 
+  // 🔧 에너지 데이터 안전하게 추출
+  const energyData = result.energy || {};
+  const energyFuel = (energyData as any).fuel || {};
+  const energyDrain = (energyData as any).drain || {};
+  const energyFlowPatterns = (energyData as any).flowPatterns || {};
+
+  // 🔧 에너지 스코어 배열이 있는 경우 처리
+  const energyScores = result.energyScores || [];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* 헤더 */}
@@ -73,7 +82,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
                 Lv.{result.maturity.level}
               </div>
               <div className="text-xs text-purple-300">
-                {levelDescriptions[result.maturity.level].name}
+                {levelDescriptions[result.maturity.level]?.name || ''}
               </div>
             </div>
           </div>
@@ -357,35 +366,60 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
           </>
         )}
 
-        {/* 에너지 탭 */}
+        {/* 에너지 탭 - 🔧 수정됨 */}
         {activeTab === 'energy' && (
           <>
-            {/* 에너지 충전 요소 */}
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">🔋 에너지 충전 요소</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(result.energy.fuel).map(([motive, score]) => (
-                  <div 
-                    key={motive}
-                    className="bg-white/10 rounded-xl p-4"
-                  >
-                    <div className="text-2xl font-bold text-green-400 mb-1">
-                      {score}
+            {/* 에너지 스코어 배열이 있는 경우 */}
+            {energyScores.length > 0 && (
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">🔋 에너지 패턴</h3>
+                <div className="space-y-4">
+                  {energyScores.map((item: any) => (
+                    <div key={item.source || item.type}>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-purple-200">{item.source || item.type}</span>
+                        <span className="text-white">{item.score}</span>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-2">
+                        <div 
+                          className="bg-cyan-500 h-2 rounded-full"
+                          style={{ width: `${item.score}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="text-sm text-purple-200">
-                      {motiveNames[motive] || motive}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* 에너지 소모 요소 */}
-            {Object.keys(result.energy.drain).length > 0 && (
+            {/* 에너지 충전 요소 (fuel 객체가 있는 경우) */}
+            {Object.keys(energyFuel).length > 0 && (
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">🔋 에너지 충전 요소</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(energyFuel).map(([motive, score]) => (
+                    <div 
+                      key={motive}
+                      className="bg-white/10 rounded-xl p-4"
+                    >
+                      <div className="text-2xl font-bold text-green-400 mb-1">
+                        {score as number}
+                      </div>
+                      <div className="text-sm text-purple-200">
+                        {motiveNames[motive] || motive}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 에너지 소모 요소 (drain 객체가 있는 경우) */}
+            {Object.keys(energyDrain).length > 0 && (
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">🪫 에너지 소모 요소</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {Object.entries(result.energy.drain).map(([drain, score]) => {
+                  {Object.entries(energyDrain).map(([drain, score]) => {
                     const drainNames: Record<string, string> = {
                       routine: '반복 업무',
                       micromanage: '세부 관리',
@@ -404,7 +438,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
                         className="bg-white/10 rounded-xl p-4"
                       >
                         <div className="text-2xl font-bold text-red-400 mb-1">
-                          {score}
+                          {score as number}
                         </div>
                         <div className="text-sm text-purple-200">
                           {drainNames[drain] || motiveNames[drain] || drain}
@@ -416,35 +450,51 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
               </div>
             )}
 
-            {/* 몰입 패턴 */}
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">🌊 몰입 패턴</h3>
-              <div className="space-y-3">
-                {Object.entries(result.energy.flowPatterns).map(([pattern, score]) => {
-                  const patternNames: Record<string, string> = {
-                    deepFocus: '깊은 몰입',
-                    challenge: '도전 선호',
-                    clarity: '명확성 선호',
-                    feedback: '피드백 선호',
-                    environment: '환경 민감도',
-                  };
-                  return (
-                    <div key={pattern}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-purple-200">{patternNames[pattern] || pattern}</span>
-                        <span className="text-white">{score}</span>
+            {/* 몰입 패턴 (flowPatterns 객체가 있는 경우) */}
+            {Object.keys(energyFlowPatterns).length > 0 && (
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">🌊 몰입 패턴</h3>
+                <div className="space-y-3">
+                  {Object.entries(energyFlowPatterns).map(([pattern, score]) => {
+                    const patternNames: Record<string, string> = {
+                      deepFocus: '깊은 몰입',
+                      challenge: '도전 선호',
+                      clarity: '명확성 선호',
+                      feedback: '피드백 선호',
+                      environment: '환경 민감도',
+                    };
+                    return (
+                      <div key={pattern}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-purple-200">{patternNames[pattern] || pattern}</span>
+                          <span className="text-white">{score as number}</span>
+                        </div>
+                        <div className="w-full bg-white/10 rounded-full h-2">
+                          <div 
+                            className="bg-cyan-500 h-2 rounded-full"
+                            style={{ width: `${score as number}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-white/10 rounded-full h-2">
-                        <div 
-                          className="bg-cyan-500 h-2 rounded-full"
-                          style={{ width: `${score}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* 데이터가 없는 경우 */}
+            {energyScores.length === 0 && 
+             Object.keys(energyFuel).length === 0 && 
+             Object.keys(energyDrain).length === 0 && 
+             Object.keys(energyFlowPatterns).length === 0 && (
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-6 text-center">
+                <div className="text-4xl mb-4">⚡</div>
+                <h3 className="text-lg font-semibold text-white mb-2">에너지 분석</h3>
+                <p className="text-purple-300 text-sm">
+                  에너지 패턴 데이터가 아직 준비되지 않았습니다.
+                </p>
+              </div>
+            )}
           </>
         )}
 
@@ -452,7 +502,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
         {activeTab === 'hidden' && (
           <>
             {/* 그림자 동기 */}
-            {Object.keys(result.hiddenMotives.shadow).length > 0 && (
+            {result.hiddenMotives?.shadow && Object.keys(result.hiddenMotives.shadow).length > 0 && (
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-2">🌑 그림자 동기</h3>
                 <p className="text-sm text-purple-300 mb-4">
@@ -480,7 +530,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
             )}
 
             {/* 투사 */}
-            {Object.keys(result.hiddenMotives.projection).length > 0 && (
+            {result.hiddenMotives?.projection && Object.keys(result.hiddenMotives.projection).length > 0 && (
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-2">🪞 투사</h3>
                 <p className="text-sm text-purple-300 mb-4">
@@ -506,7 +556,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
             )}
 
             {/* 보상 동기 */}
-            {Object.keys(result.hiddenMotives.compensation).length > 0 && (
+            {result.hiddenMotives?.compensation && Object.keys(result.hiddenMotives.compensation).length > 0 && (
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-2">💫 보상 동기</h3>
                 <p className="text-sm text-purple-300 mb-4">
@@ -532,7 +582,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
             )}
 
             {/* 동기 충돌 */}
-            {result.conflicts.length > 0 && (
+            {result.conflicts && result.conflicts.length > 0 && (
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-2">⚔️ 동기 충돌</h3>
                 <p className="text-sm text-purple-300 mb-4">
@@ -572,6 +622,21 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
                 </div>
               </div>
             )}
+
+            {/* 데이터가 없는 경우 */}
+            {(!result.hiddenMotives || 
+              (Object.keys(result.hiddenMotives.shadow || {}).length === 0 &&
+               Object.keys(result.hiddenMotives.projection || {}).length === 0 &&
+               Object.keys(result.hiddenMotives.compensation || {}).length === 0)) &&
+             (!result.conflicts || result.conflicts.length === 0) && (
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-6 text-center">
+                <div className="text-4xl mb-4">🌙</div>
+                <h3 className="text-lg font-semibold text-white mb-2">숨겨진 동기 분석</h3>
+                <p className="text-purple-300 text-sm">
+                  숨겨진 동기 데이터가 아직 준비되지 않았습니다.
+                </p>
+              </div>
+            )}
           </>
         )}
 
@@ -587,10 +652,10 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
                   Lv.{result.maturity.level}
                 </div>
                 <div className="text-xl text-white mb-1">
-                  {levelDescriptions[result.maturity.level].name}
+                  {levelDescriptions[result.maturity.level]?.name || ''}
                 </div>
                 <div className="text-purple-300">
-                  {levelDescriptions[result.maturity.level].desc}
+                  {levelDescriptions[result.maturity.level]?.desc || ''}
                 </div>
               </div>
               
@@ -650,7 +715,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
             </div>
 
             {/* 상황별 변화 */}
-            {result.contextShifts.length > 0 && (
+            {result.contextShifts && result.contextShifts.length > 0 && (
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">상황별 동기 변화</h3>
                 <div className="space-y-4">
@@ -671,7 +736,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
                             주요: {motiveNames[ctx.dominantMotive]}
                           </span>
                         </div>
-                        {Object.keys(ctx.motiveShift).length > 0 && (
+                        {ctx.motiveShift && Object.keys(ctx.motiveShift).length > 0 && (
                           <div className="text-sm text-purple-300">
                             변화: {Object.entries(ctx.motiveShift).map(([m, v]) => 
                               `${motiveNames[m]} ${v! > 0 ? '+' : ''}${v}`
@@ -709,7 +774,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
                   <div className="text-white font-medium">{result.validation.honesty}점</div>
                 </div>
               </div>
-              {result.validation.flags.length > 0 && (
+              {result.validation.flags && result.validation.flags.length > 0 && (
                 <div className="mt-3 text-sm text-yellow-300">
                   주의: {result.validation.flags.join(', ')}
                 </div>
