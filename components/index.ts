@@ -3,7 +3,7 @@ export { QuestionCard } from './QuestionCard';
 export { TestScreen } from './TestScreen';
 export { ResultScreen } from './ResultScreen';
 export { FullResultScreen } from './FullResultScreen';
-export { default as ReportViewer } from './ReportViewer';
+export { ReportViewer } from './ReportViewer';
 export { NicknameInput } from './NicknameInput.tsx';
 
 // Option Components
