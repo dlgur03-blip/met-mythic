@@ -218,7 +218,7 @@ const FIGURE_PROFILES: Record<Archetype, Array<{
 // ============================================
 
 function weightedSimilarity(
-  userMotives: Record<string, number>,
+  userMotives: UserMotivation | Record<string, number>,
   figureMotives: Record<string, number>
 ): number {
   const motives = [
