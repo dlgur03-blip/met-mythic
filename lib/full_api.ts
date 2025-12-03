@@ -230,7 +230,7 @@ function weightedSimilarity(
   let maxPossibleDiff = 0;
   
   for (const motive of motives) {
-    const userVal = userMotives[motive] || 50;
+    const userVal = (userMotives as Record<string, number>)[motive] || 50;
     const figureVal = (figureMotives[motive] || 0.5) * 100;
     
     const diff = Math.abs(userVal - figureVal);
