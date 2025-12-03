@@ -385,19 +385,33 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">🪫 에너지 소모 요소</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {Object.entries(result.energy.drain).map(([drain, score]) => (
-                    <div 
-                      key={drain}
-                      className="bg-white/10 rounded-xl p-4"
-                    >
-                      <div className="text-2xl font-bold text-red-400 mb-1">
-                        {score}
+                  {Object.entries(result.energy.drain).map(([drain, score]) => {
+                    const drainNames: Record<string, string> = {
+                      routine: '반복 업무',
+                      micromanage: '세부 관리',
+                      conflict: '갈등 상황',
+                      uncertainty: '불확실성',
+                      isolation: '고립',
+                      pressure: '압박',
+                      boredom: '지루함',
+                      criticism: '비판',
+                      restriction: '제한',
+                      monotony: '단조로움',
+                    };
+                    return (
+                      <div 
+                        key={drain}
+                        className="bg-white/10 rounded-xl p-4"
+                      >
+                        <div className="text-2xl font-bold text-red-400 mb-1">
+                          {score}
+                        </div>
+                        <div className="text-sm text-purple-200">
+                          {drainNames[drain] || motiveNames[drain] || drain}
+                        </div>
                       </div>
-                      <div className="text-sm text-purple-200">
-                        {drain}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
