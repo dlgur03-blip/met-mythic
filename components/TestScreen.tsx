@@ -18,14 +18,13 @@ export function TestScreen({ questions, version, onComplete }: TestScreenProps) 
     currentQuestion,
     selectedOptionId,
     elapsedTime,
-    remainingQuestions,
     start,
     selectOption,
+    next,
   } = useTest({
     questions,
     onComplete,
-    autoAdvance: true,
-    autoAdvanceDelay: 400,
+    autoAdvance: false,  // 자동 넘김 끔
   });
 
   // 시작 화면
@@ -101,15 +100,10 @@ export function TestScreen({ questions, version, onComplete }: TestScreenProps) 
   // 테스트 진행 화면
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 py-8 px-4">
-      {/* 상단 정보 */}
+      {/* 상단 정보 - 시간만 표시 */}
       <div className="max-w-2xl mx-auto mb-6">
-        <div className="flex justify-between items-center text-sm text-gray-500">
-          <span>
-            ⏱️ {formatTime(elapsedTime)}
-          </span>
-          <span>
-            남은 문항: {remainingQuestions}
-          </span>
+        <div className="flex justify-center text-sm text-gray-500">
+          <span>⏱️ {formatTime(elapsedTime)}</span>
         </div>
       </div>
 
@@ -124,9 +118,19 @@ export function TestScreen({ questions, version, onComplete }: TestScreenProps) 
         />
       )}
 
-      {/* 키보드 단축키 안내 */}
-      <div className="max-w-2xl mx-auto mt-6 text-center text-sm text-gray-400">
-        선택하면 자동으로 다음 문항으로 넘어갑니다
+      {/* 다음 버튼 */}
+      <div className="max-w-2xl mx-auto mt-6">
+        <button
+          onClick={next}
+          disabled={!selectedOptionId}
+          className={`w-full py-4 rounded-xl font-medium transition-all duration-200
+            ${selectedOptionId 
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-xl active:scale-[0.98]' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+        >
+          {currentIndex < questions.length - 1 ? '다음' : '결과 보기'}
+        </button>
       </div>
     </div>
   );

@@ -26,23 +26,8 @@ export function QuestionCard({
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {/* 진행률 바 */}
-      <div className="mb-6">
-        <div className="flex justify-between text-sm text-gray-500 mb-2">
-          <span>문항 {currentIndex + 1} / {totalQuestions}</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
       {/* 문항 카드 */}
       <div className="bg-white rounded-2xl shadow-lg p-8">
-
         {/* 문항 텍스트 */}
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           {question.text}
