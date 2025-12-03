@@ -317,7 +317,7 @@ function matchFigureFull(
   const results: FigureMatch[] = [];
 
   for (const figure of figures) {
-    const similarity = weightedSimilarity(motivation as Record<string, number>, figure.motivation);
+    const similarity = weightedSimilarity(motivation, figure.motivation);
 
     results.push({
       figure: figure.key,
