@@ -159,6 +159,8 @@ export async function GET(): Promise<NextResponse> {
     status: 'ok',
     model: 'Gemini 2.5 Pro',
     maxTokens: 60000,
+    hasKey: !!process.env.GEMINI_API_KEY,
+    keyLength: process.env.GEMINI_API_KEY?.length || 0,
     message: 'AI 보고서 생성 API가 준비되었습니다.',
   });
 }
