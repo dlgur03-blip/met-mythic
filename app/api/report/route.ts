@@ -18,10 +18,10 @@ import {
 import type { Archetype } from '@/lib/types';
 
 // ============================================
-// 환경 변수
+// 환경 변수 (하드코딩 금지!)
 // ============================================
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
 
 // ============================================
@@ -55,6 +55,10 @@ async function loadArchetypeMarkdown(archetype: string): Promise<string> {
 // ============================================
 
 async function callGeminiAPI(prompt: string): Promise<{ text: string; tokensUsed: number }> {
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
+
   const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
@@ -98,6 +102,15 @@ async function callGeminiAPI(prompt: string): Promise<{ text: string; tokensUsed
 
 export async function POST(request: NextRequest): Promise<NextResponse<ReportResponse>> {
   try {
+    // 0. API 키 확인 (가장 먼저!)
+    if (!GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY is not set in environment variables');
+      return NextResponse.json(
+        { success: false, error: 'AI service is not configured. Please check environment variables.' },
+        { status: 500 }
+      );
+    }
+
     // 1. 요청 파싱
     const body = await request.json() as ReportRequest;
     const { fullResult } = body;
@@ -151,14 +164,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ReportRes
 }
 
 // ============================================
-// GET Handler (상태 확인용)
+// GET Handler (상태 확인용 + 환경변수 체크)
 // ============================================
 
 export async function GET(): Promise<NextResponse> {
+  const isConfigured = !!GEMINI_API_KEY;
+  
   return NextResponse.json({
-    status: 'ok',
+    status: isConfigured ? 'ok' : 'error',
+    configured: isConfigured,
     model: 'Gemini 2.5 Pro',
     maxTokens: 60000,
-    message: 'AI 보고서 생성 API가 준비되었습니다.',
+    message: isConfigured 
+      ? 'AI 보고서 생성 API가 준비되었습니다.' 
+      : '⚠️ GEMINI_API_KEY가 설정되지 않았습니다. Vercel 환경변수를 확인하세요.',
   });
 }

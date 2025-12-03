@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Resend API 설정
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_TuizcFbg_5Adg67Zfw5S15HZCXZvw34me';
+// Resend API 설정 (환경변수에서만 읽음 - 절대 하드코딩 금지!)
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 export async function POST(request: NextRequest) {
   try {
+    // API 키 확인
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is not set');
+      return NextResponse.json(
+        { success: false, error: 'Email service is not configured' },
+        { status: 500 }
+      );
+    }
+
     const { email, htmlContent, archetypeName, figureName } = await request.json();
 
     if (!email || !htmlContent) {
