@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { TestScreen, ResultScreen, FullResultScreen, ReportViewer } from '@/components';
 import { AdminPanel } from '@/components/AdminPanel';
 import { KeyInput } from '@/components/KeyInput';
-import { NicknameInput } from '@/components/NicknameInput';
+import { NicknameInput } from '@/components';
 import { getLiteQuestions, calculateLiteScores } from '@/lib/lite_api';
 import { getFullQuestions, calculateFullScores } from '@/lib/full_api';
 import type { Answer } from '@/lib/types';
