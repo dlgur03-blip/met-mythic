@@ -205,7 +205,7 @@ export function calculateLiteScores(answers: Answer[]): LiteResult {
     maturityScore: maturityResult.overall,
     
     isValid: validationResult.isValid,
-    validationFlags: validationResult.flags,
+    validationFlags: (validationResult as any).flags || [],
     
     completedAt: new Date(),
     totalTimeMs,

@@ -140,7 +140,9 @@ export function generateDummyAnswers(testType: ReturnType<typeof parseTestType>)
       questionId: question.id,
       optionId: selectedOption.id,
       responseTimeMs: Math.round(responseTimeMs),
-    });
+      value: selectedOption.value ?? 0,
+      timestamp: Date.now(),
+    } as any);
   }
   
   return answers;

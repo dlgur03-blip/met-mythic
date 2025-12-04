@@ -1444,7 +1444,7 @@ export function calculateDirectionScores(answers: Answer[]): DirectionScore[] {
 }
 
 export function calculateOperationScores(answers: Answer[]): OperationScore[] {
-  const accumulators: Record<OperationAxis, { pole1: PrecisionAccumulator; pole2: PrecisionAccumulator }> = {
+  const accumulators: Record<string, { pole1: PrecisionAccumulator; pole2: PrecisionAccumulator }> = {
     'internal_external': { pole1: createAccumulator(), pole2: createAccumulator() },
     'immediate_delayed': { pole1: createAccumulator(), pole2: createAccumulator() },
     'active_passive': { pole1: createAccumulator(), pole2: createAccumulator() },
@@ -1464,8 +1464,8 @@ export function calculateOperationScores(answers: Answer[]): OperationScore[] {
     else if (pole === 2) addScore(accumulators[axis].pole2, scores.value, 1, answer.responseTimeMs, answer.questionId);
   }
   
-  const axisNames: Record<OperationAxis, [string, string]> = {
-    'internal_external': ['내적', '외적'],
+  const axisNames: Record<string, [string, string]> = {
+    'internal_external': ['내적', '외적'], 
     'immediate_delayed': ['즉각', '지연'],
     'active_passive': ['능동', '수동'],
     'independent_dependent': ['독립', '의존'],
@@ -1482,7 +1482,7 @@ export function calculateOperationScores(answers: Answer[]): OperationScore[] {
       pole1Score, pole2Score,
       ratio: round2((pole1Score / total) * 100),
     };
-  });
+  }) as any;
 }
 
 export function calculateEnergyScores(answers: Answer[]): EnergyScore {

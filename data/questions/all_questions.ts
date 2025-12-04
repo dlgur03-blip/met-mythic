@@ -144,10 +144,10 @@ export const ALL_QUESTIONS = [
 // ============================================
 
 // 메타데이터가 병합된 문항들 (사회적 바람직성 점수 포함)
-export const QUESTIONS_WITH_METADATA = mergeQuestionMetadata(ALL_QUESTIONS);
+export const QUESTIONS_WITH_METADATA = mergeQuestionMetadata(ALL_QUESTIONS as any);
 
 // 역문항이 포함된 전체 문항 (Full 버전용 - 334문항)
-export const ALL_QUESTIONS_WITH_REVERSE = addReverseQuestions(ALL_QUESTIONS);
+export const ALL_QUESTIONS_WITH_REVERSE = addReverseQuestions(ALL_QUESTIONS as any);
 
 // 역문항 쌍 export (검증용)
 export { REVERSE_PAIRS };

@@ -58,7 +58,7 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
   const energyFlowPatterns = (energyData as any).flowPatterns || {};
 
   // 🔧 에너지 스코어 배열이 있는 경우 처리
-  const energyScores = result.energyScores || [];
+  const energyScores = (result as any).energyScores || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -774,9 +774,9 @@ export function FullResultScreen({ result, onRetry, onGenerateReport }: FullResu
                   <div className="text-white font-medium">{result.validation.honesty}점</div>
                 </div>
               </div>
-              {result.validation.flags && result.validation.flags.length > 0 && (
+              {(result.validation as any).flags && (result.validation as any).flags.length > 0 && (
                 <div className="mt-3 text-sm text-yellow-300">
-                  주의: {result.validation.flags.join(', ')}
+                  주의: {(result.validation as any).flags.join(', ')}
                 </div>
               )}
             </div>

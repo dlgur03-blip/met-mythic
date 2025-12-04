@@ -300,9 +300,9 @@ export function convertToUserProfile(result: FullResult): UserProfile {
     direction,
     shadow,
     energy: {
-      fuel: result.energy.fuel,
-      drain: result.energy.drain,
-      flowPatterns: result.energy.flowPatterns,
+      fuel: (result.energy as any)?.fuel || {},
+      drain: (result.energy as any)?.drain || {},
+      flowPatterns: (result.energy as any)?.flowPatterns || {},
     },
     conflicts: result.conflicts.map(c => ({
       pair: c.pair,
